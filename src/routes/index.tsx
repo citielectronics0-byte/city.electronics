@@ -49,6 +49,8 @@ function Index() {
   };
   const [active, setActive] = useState<string>("all");
   const [cart, setCart] = useState<Record<string, number>>({});
+  const [zoneId, setZoneId] = useState<string>(deliveryZones[0]!.id);
+  const zone = deliveryZones.find((z) => z.id === zoneId)!;
 
   const visible = useMemo(
     () => (active === "all" ? products : products.filter((p) => p.category_id === active)),
@@ -68,7 +70,7 @@ function Index() {
         return `• ${p.name} × ${qty} — ₹${p.price * qty}`;
       })
       .join("\n");
-    return `Hello City Electronics, I would like to order:\n\n${body}\n\nEstimated total: ₹${total}\n\nName:\nAddress / Pickup:`;
+    return `Hello City Electronics, I would like to order:\n\n${body}\n\nEstimated total: ₹${total}\nDelivery to: ${zone.label} (${zone.eta})\n\nName:\nAddress / Pickup:`;
   };
 
   const setQty = (id: string, delta: number) =>
