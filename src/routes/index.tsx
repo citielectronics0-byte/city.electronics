@@ -173,7 +173,22 @@ function Index() {
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((p) => (
-              <article key={p.id} className="card-classic flex flex-col p-6">
+              <article key={p.id} className="card-classic flex flex-col overflow-hidden">
+                <div className="aspect-4/3 w-full border-b border-border bg-secondary">
+                  {p.image_url ? (
+                    <img
+                      src={p.image_url}
+                      alt={p.name}
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center text-muted-foreground">
+                      <ImageOff className="size-7" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-1 flex-col p-6">
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="font-display text-lg leading-snug">{p.name}</h3>
                   <span
