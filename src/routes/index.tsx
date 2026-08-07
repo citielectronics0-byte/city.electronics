@@ -234,6 +234,7 @@ function Index() {
                     Enquire
                   </a>
                 </div>
+                </div>
               </article>
             ))}
           </div>
