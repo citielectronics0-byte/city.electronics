@@ -117,8 +117,9 @@ function Index() {
         <h2 className="rule-gold font-display text-3xl">What we stock</h2>
         <div className="mt-10 grid gap-px bg-border sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((c) => {
-            const Icon = categoryIcons[c.id];
+            const Icon = categoryIcons[c.id] ?? Cable;
             return (
+
               <button
                 key={c.id}
                 onClick={() => {
