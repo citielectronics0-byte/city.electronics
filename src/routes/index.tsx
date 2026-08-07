@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Cable, Plug, Tv, CircuitBoard, Laptop, Smartphone, MessageCircle, MapPin, Clock, Phone, Minus, Plus, Lock } from "lucide-react";
+import { Cable, Plug, Tv, CircuitBoard, Laptop, Smartphone, MessageCircle, MapPin, Clock, Phone, Minus, Plus, Lock, Truck, ImageOff } from "lucide-react";
 import heroImage from "@/assets/hero-electronics.jpg";
-import { whatsappLink, WHATSAPP_NUMBER, type Category, type Product } from "@/data/catalog";
+import { whatsappLink, WHATSAPP_NUMBER, deliveryZones, SHOP_LOCATION, type Category, type Product } from "@/data/catalog";
 import { getCatalog } from "@/lib/catalog.functions";
 
 export const Route = createFileRoute("/")({
