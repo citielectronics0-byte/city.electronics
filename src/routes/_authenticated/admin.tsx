@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Trash2, Plus, LogOut, ArrowLeft } from "lucide-react";
+import { Trash2, Plus, LogOut, ArrowLeft, ImagePlus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Category, Product } from "@/data/catalog";
 
@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
       { title: "Manage Catalogue — City Electronics" },
-      { name: "description", content: "Add, edit and remove City Electronics products, prices and stock status." },
+      { name: "description", content: "Add, edit and remove City Electronics products, photos, prices and stock status." },
       { property: "og:title", content: "Manage Catalogue — City Electronics" },
       { property: "og:description", content: "Internal catalogue manager for City Electronics." },
       { property: "og:type", content: "website" },
@@ -25,18 +25,32 @@ function Admin() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [previews, setPreviews] = useState<Record<string, string>>({});
+  const [uploading, setUploading] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [draft, setDraft] = useState(emptyDraft);
   const [error, setError] = useState<string | null>(null);
 
+  async function signPaths(paths: string[]) {
+    if (!paths.length) return;
+    const { data } = await supabase.storage.from("product-images").createSignedUrls(paths, 60 * 60);
+    const next: Record<string, string> = {};
+    for (const item of data ?? []) if (item.path && item.signedUrl) next[item.path] = item.signedUrl;
+    setPreviews((p) => ({ ...p, ...next }));
+  }
+
   async function load() {
     const [cats, prods] = await Promise.all([
       supabase.from("categories").select("id, name, blurb").order("sort_order"),
-      supabase.from("products").select("id, name, category_id, price, note, in_stock").order("sort_order"),
+      supabase
+        .from("products")
+        .select("id, name, category_id, price, note, in_stock, image_url")
+        .order("sort_order"),
     ]);
     setCategories(cats.data ?? []);
     setProducts(prods.data ?? []);
     setDraft((d) => ({ ...d, category_id: d.category_id || (cats.data?.[0]?.id ?? "") }));
+    await signPaths((prods.data ?? []).map((p) => p.image_url).filter((v): v is string => Boolean(v)));
   }
 
   useEffect(() => {
@@ -71,7 +85,30 @@ function Admin() {
     if (error) setError(error.message);
   }
 
+  async function uploadImage(product: Product, file: File) {
+    setError(null);
+    setUploading(product.id);
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${product.id}-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("product-images")
+      .upload(path, file, { upsert: true, contentType: file.type });
+    setUploading(null);
+    if (upErr) return setError(upErr.message);
+    if (product.image_url) await supabase.storage.from("product-images").remove([product.image_url]);
+    await patch(product.id, { image_url: path });
+    await signPaths([path]);
+  }
+
+  async function removeImage(product: Product) {
+    if (!product.image_url) return;
+    await supabase.storage.from("product-images").remove([product.image_url]);
+    await patch(product.id, { image_url: null });
+  }
+
   async function remove(id: string) {
+    const target = products.find((p) => p.id === id);
+    if (target?.image_url) await supabase.storage.from("product-images").remove([target.image_url]);
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) return setError(error.message);
     setProducts((ps) => ps.filter((p) => p.id !== id));
@@ -114,6 +151,7 @@ function Admin() {
 
         <section className="card-classic p-6">
           <h2 className="font-display text-xl">Add a new item</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Add the item first, then upload its photo from the list below.</p>
           <form onSubmit={addProduct} className="mt-5 grid gap-3 md:grid-cols-5">
             <input
               required
@@ -159,7 +197,36 @@ function Admin() {
           <h2 className="rule-gold font-display text-2xl">Items ({products.length})</h2>
           <div className="mt-6 space-y-3">
             {products.map((p) => (
-              <div key={p.id} className="card-classic grid gap-3 p-4 md:grid-cols-[2fr_1fr_100px_2fr_auto_auto] md:items-center">
+              <div key={p.id} className="card-classic grid gap-3 p-4 md:grid-cols-[96px_2fr_1fr_100px_2fr_auto_auto] md:items-center">
+                <div className="space-y-2">
+                  <div className="grid h-20 w-20 place-items-center overflow-hidden border border-border bg-secondary">
+                    {uploading === p.id ? (
+                      <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                    ) : p.image_url && previews[p.image_url] ? (
+                      <img src={previews[p.image_url]} alt={p.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <ImagePlus className="size-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <label className="block cursor-pointer text-[10px] uppercase tracking-widest text-accent-foreground underline decoration-accent underline-offset-4">
+                    {p.image_url ? "Replace" : "Add photo"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadImage(p, file);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  {p.image_url && (
+                    <button onClick={() => removeImage(p)} className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                      Remove photo
+                    </button>
+                  )}
+                </div>
                 <input
                   value={p.name}
                   onChange={(e) => setProducts((ps) => ps.map((x) => (x.id === p.id ? { ...x, name: e.target.value } : x)))}

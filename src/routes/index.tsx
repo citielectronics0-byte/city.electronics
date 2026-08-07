@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Cable, Plug, Tv, CircuitBoard, Laptop, Smartphone, MessageCircle, MapPin, Clock, Phone, Minus, Plus, Lock } from "lucide-react";
+import { Cable, Plug, Tv, CircuitBoard, Laptop, Smartphone, MessageCircle, MapPin, Clock, Phone, Minus, Plus, Lock, Truck, ImageOff } from "lucide-react";
 import heroImage from "@/assets/hero-electronics.jpg";
-import { whatsappLink, WHATSAPP_NUMBER, type Category, type Product } from "@/data/catalog";
+import { whatsappLink, WHATSAPP_NUMBER, deliveryZones, SHOP_LOCATION, type Category, type Product } from "@/data/catalog";
 import { getCatalog } from "@/lib/catalog.functions";
 
 export const Route = createFileRoute("/")({
@@ -49,6 +49,8 @@ function Index() {
   };
   const [active, setActive] = useState<string>("all");
   const [cart, setCart] = useState<Record<string, number>>({});
+  const [zoneId, setZoneId] = useState<string>(deliveryZones[0]!.id);
+  const zone = deliveryZones.find((z) => z.id === zoneId)!;
 
   const visible = useMemo(
     () => (active === "all" ? products : products.filter((p) => p.category_id === active)),
@@ -68,7 +70,7 @@ function Index() {
         return `• ${p.name} × ${qty} — ₹${p.price * qty}`;
       })
       .join("\n");
-    return `Hello City Electronics, I would like to order:\n\n${body}\n\nEstimated total: ₹${total}\n\nName:\nAddress / Pickup:`;
+    return `Hello City Electronics, I would like to order:\n\n${body}\n\nEstimated total: ₹${total}\nDelivery to: ${zone.label} (${zone.eta})\n\nName:\nAddress / Pickup:`;
   };
 
   const setQty = (id: string, delta: number) =>
@@ -171,7 +173,22 @@ function Index() {
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((p) => (
-              <article key={p.id} className="card-classic flex flex-col p-6">
+              <article key={p.id} className="card-classic flex flex-col overflow-hidden">
+                <div className="aspect-4/3 w-full border-b border-border bg-secondary">
+                  {p.image_url ? (
+                    <img
+                      src={p.image_url}
+                      alt={p.name}
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center text-muted-foreground">
+                      <ImageOff className="size-7" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-1 flex-col p-6">
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="font-display text-lg leading-snug">{p.name}</h3>
                   <span
@@ -217,11 +234,50 @@ function Index() {
                     Enquire
                   </a>
                 </div>
+                </div>
               </article>
             ))}
           </div>
         </div>
       </section>
+
+      {/* Delivery */}
+      <section className="mx-auto max-w-6xl px-5 py-16">
+        <h2 className="rule-gold font-display text-3xl">Delivery time</h2>
+        <p className="mt-4 max-w-2xl text-sm text-muted-foreground">
+          We dispatch from {SHOP_LOCATION}. Choose where you are and we will show the usual delivery
+          time — it travels with your WhatsApp order too.
+        </p>
+
+        <div className="mt-8 grid gap-8 md:grid-cols-[1fr_1fr]">
+          <div className="flex flex-wrap gap-2">
+            {deliveryZones.map((z) => (
+              <button
+                key={z.id}
+                onClick={() => setZoneId(z.id)}
+                className={`border px-4 py-2 text-sm transition-colors ${
+                  zoneId === z.id
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-foreground hover:border-accent"
+                }`}
+              >
+                {z.label}
+              </button>
+            ))}
+          </div>
+          <div className="card-classic p-7">
+            <Truck className="size-6 text-accent" />
+            <p className="mt-4 text-xs uppercase tracking-[0.28em] text-muted-foreground">{zone.label}</p>
+            <p className="mt-2 font-display text-2xl text-primary">{zone.eta}</p>
+            <p className="mt-3 text-sm text-muted-foreground">{zone.areas}</p>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Orders confirmed before 5:00 pm are dispatched the same working day. Sundays and public
+              holidays are not counted.
+            </p>
+          </div>
+        </div>
+      </section>
+
 
       {/* Visit */}
       <section className="mx-auto grid max-w-6xl gap-10 px-5 py-16 md:grid-cols-2">
