@@ -241,6 +241,44 @@ function Index() {
         </div>
       </section>
 
+      {/* Delivery */}
+      <section className="mx-auto max-w-6xl px-5 py-16">
+        <h2 className="rule-gold font-display text-3xl">Delivery time</h2>
+        <p className="mt-4 max-w-2xl text-sm text-muted-foreground">
+          We dispatch from {SHOP_LOCATION}. Choose where you are and we will show the usual delivery
+          time — it travels with your WhatsApp order too.
+        </p>
+
+        <div className="mt-8 grid gap-8 md:grid-cols-[1fr_1fr]">
+          <div className="flex flex-wrap gap-2">
+            {deliveryZones.map((z) => (
+              <button
+                key={z.id}
+                onClick={() => setZoneId(z.id)}
+                className={`border px-4 py-2 text-sm transition-colors ${
+                  zoneId === z.id
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-foreground hover:border-accent"
+                }`}
+              >
+                {z.label}
+              </button>
+            ))}
+          </div>
+          <div className="card-classic p-7">
+            <Truck className="size-6 text-accent" />
+            <p className="mt-4 text-xs uppercase tracking-[0.28em] text-muted-foreground">{zone.label}</p>
+            <p className="mt-2 font-display text-2xl text-primary">{zone.eta}</p>
+            <p className="mt-3 text-sm text-muted-foreground">{zone.areas}</p>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Orders confirmed before 5:00 pm are dispatched the same working day. Sundays and public
+              holidays are not counted.
+            </p>
+          </div>
+        </div>
+      </section>
+
+
       {/* Visit */}
       <section className="mx-auto grid max-w-6xl gap-10 px-5 py-16 md:grid-cols-2">
         <div>
