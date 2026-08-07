@@ -1,10 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Cable, Plug, Tv, CircuitBoard, Laptop, Smartphone, MessageCircle, MapPin, Clock, Phone, Minus, Plus } from "lucide-react";
+import { Cable, Plug, Tv, CircuitBoard, Laptop, Smartphone, MessageCircle, MapPin, Clock, Phone, Minus, Plus, Lock } from "lucide-react";
 import heroImage from "@/assets/hero-electronics.jpg";
-import { categories, products, whatsappLink, WHATSAPP_NUMBER } from "@/data/catalog";
+import { whatsappLink, WHATSAPP_NUMBER, type Category, type Product } from "@/data/catalog";
+import { getCatalog } from "@/lib/catalog.functions";
 
 export const Route = createFileRoute("/")({
+  loader: () => getCatalog(),
   head: () => ({
     meta: [
       { title: "City Electronics — Cables, Connectors & Accessories" },
@@ -22,6 +24,12 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  errorComponent: () => (
+    <div className="grid min-h-screen place-items-center p-8 text-center">
+      <p>Could not load the catalogue right now. Please refresh the page.</p>
+    </div>
+  ),
+  notFoundComponent: () => <div className="p-8">Page not found.</div>,
   component: Index,
 });
 
@@ -35,12 +43,16 @@ const categoryIcons: Record<string, typeof Cable> = {
 };
 
 function Index() {
+  const { categories, products } = Route.useLoaderData() as {
+    categories: Category[];
+    products: Product[];
+  };
   const [active, setActive] = useState<string>("all");
   const [cart, setCart] = useState<Record<string, number>>({});
 
   const visible = useMemo(
-    () => (active === "all" ? products : products.filter((p) => p.category === active)),
-    [active],
+    () => (active === "all" ? products : products.filter((p) => p.category_id === active)),
+    [active, products],
   );
 
   const lines = Object.entries(cart).filter(([, qty]) => qty > 0);
@@ -119,7 +131,6 @@ function Index() {
           {categories.map((c) => {
             const Icon = categoryIcons[c.id] ?? Cable;
             return (
-
               <button
                 key={c.id}
                 onClick={() => {
@@ -161,27 +172,42 @@ function Index() {
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((p) => (
               <article key={p.id} className="card-classic flex flex-col p-6">
-                <h3 className="font-display text-lg leading-snug">{p.name}</h3>
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="font-display text-lg leading-snug">{p.name}</h3>
+                  <span
+                    className={`shrink-0 border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest ${
+                      p.in_stock
+                        ? "border-accent/60 text-accent-foreground"
+                        : "border-border text-muted-foreground"
+                    }`}
+                  >
+                    {p.in_stock ? "In stock" : "Out of stock"}
+                  </span>
+                </div>
                 <p className="mt-1 text-sm text-muted-foreground">{p.note}</p>
                 <p className="mt-4 font-display text-2xl text-primary">₹{p.price}</p>
                 <div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-4">
-                  <div className="flex items-center border border-border">
-                    <button
-                      aria-label={`Remove one ${p.name}`}
-                      onClick={() => setQty(p.id, -1)}
-                      className="px-3 py-2 text-muted-foreground transition-colors hover:bg-secondary"
-                    >
-                      <Minus className="size-3.5" />
-                    </button>
-                    <span className="min-w-8 text-center text-sm font-semibold">{cart[p.id] ?? 0}</span>
-                    <button
-                      aria-label={`Add one ${p.name}`}
-                      onClick={() => setQty(p.id, 1)}
-                      className="px-3 py-2 text-muted-foreground transition-colors hover:bg-secondary"
-                    >
-                      <Plus className="size-3.5" />
-                    </button>
-                  </div>
+                  {p.in_stock ? (
+                    <div className="flex items-center border border-border">
+                      <button
+                        aria-label={`Remove one ${p.name}`}
+                        onClick={() => setQty(p.id, -1)}
+                        className="px-3 py-2 text-muted-foreground transition-colors hover:bg-secondary"
+                      >
+                        <Minus className="size-3.5" />
+                      </button>
+                      <span className="min-w-8 text-center text-sm font-semibold">{cart[p.id] ?? 0}</span>
+                      <button
+                        aria-label={`Add one ${p.name}`}
+                        onClick={() => setQty(p.id, 1)}
+                        className="px-3 py-2 text-muted-foreground transition-colors hover:bg-secondary"
+                      >
+                        <Plus className="size-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Ask us when it arrives</span>
+                  )}
                   <a
                     href={whatsappLink(`Hello City Electronics, is "${p.name}" (₹${p.price}) available?`)}
                     target="_blank"
@@ -229,7 +255,12 @@ function Index() {
       <footer className="surface-ink">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-8 text-sm">
           <p className="font-display text-lg">City Electronics</p>
-          <p className="text-primary-foreground/60">© {new Date().getFullYear()} City Electronics. All rights reserved.</p>
+          <div className="flex items-center gap-5">
+            <Link to="/admin" className="inline-flex items-center gap-2 text-primary-foreground/60 hover:text-gold-soft">
+              <Lock className="size-3.5" /> Shop login
+            </Link>
+            <p className="text-primary-foreground/60">© {new Date().getFullYear()} City Electronics. All rights reserved.</p>
+          </div>
         </div>
       </footer>
 
