@@ -43,7 +43,10 @@ const categoryIcons: Record<string, typeof Cable> = {
 };
 
 function Index() {
-  const { categories, products } = Route.useLoaderData();
+  const { categories, products } = Route.useLoaderData() as {
+    categories: Category[];
+    products: Product[];
+  };
   const [active, setActive] = useState<string>("all");
   const [cart, setCart] = useState<Record<string, number>>({});
 
