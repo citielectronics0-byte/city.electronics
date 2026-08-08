@@ -1,4 +1,4 @@
-export const WHATSAPP_NUMBER = "919999999999"; // TODO: replace with City Electronics WhatsApp number
+export const WHATSAPP_NUMBER = "919946249664"; // TODO: replace with City Electronics WhatsApp number
 
 export const SHOP_LOCATION = "Ernakulam, Kerala";
 
