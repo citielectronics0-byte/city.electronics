@@ -25,7 +25,7 @@ export default defineConfig({
     base: "/city.electronics/",
     plugins: [
       nitro({
-        preset: "node-server",
+        preset: "static",
       }),
     ],
   },
