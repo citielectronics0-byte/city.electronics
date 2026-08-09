@@ -5,11 +5,11 @@
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from 'vite';
-import { tanstackStart } from '@tanstack/start/vite';
+import tanstackStart from '@tanstack/start/plugin/vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  base: './',
+  base: '/city.electronics/',
   plugins: [
     react(),
     tanstackStart({
