@@ -2,7 +2,9 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: ['main']
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -10,42 +12,42 @@ permissions:
   id-token: write
 
 concurrency:
-  group: 'pages'
+  group: pages
   cancel-in-progress: true
 
 jobs:
   deploy:
+    runs-on: ubuntu-latest
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
 
       - name: Install dependencies
         run: npm install
 
-      - name: Build project
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-        run: |
-          npm run build
-          cp .output/public/index.html .output/public/404.html
+      - name: Install missing TanStack Start package
+        run: npm install @tanstack/start
 
-      - name: Setup Pages
+      - name: Build website
+        run: npm run build
+
+      - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload build artifact
+      - name: Upload website
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './.output/public'
+          path: ./dist
 
       - name: Deploy to GitHub Pages
         id: deployment
