@@ -10,7 +10,14 @@ export default defineConfig({
   vite: {
     base: "./",
   },
- tanstackStart: {
-    spa: {},
+  tanstackStart: {
+    server: {
+      entry: "server",
+      outputDirectory: "dist/server",
+    },
+    prerender: {
+      routes: ["/"],
+      crawlLinks: true,
+    },
   },
 });
