@@ -8,6 +8,18 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { nitro } from "nitro/vite";
 
 export default defineConfig({
+  tanstackStart: {
+    server: {
+      entry: "server",
+    },
+    prerender: {
+      enabled: true,
+      autoSubfolderIndex: true,
+      autoStaticPathsDiscovery: true,
+      crawlLinks: true,
+    },
+  },
+
   vite: {
     base: "/city.electronics/",
     plugins: [
@@ -15,18 +27,5 @@ export default defineConfig({
         preset: "node-server",
       }),
     ],
-  },
-
-  tanstackStart: {
-    server: {
-      entry: "server",
-    },
-
-    prerender: {
-      enabled: true,
-      autoSubfolderIndex: true,
-      autoStaticPathsDiscovery: true,
-      crawlLinks: true,
-    },
   },
 });
