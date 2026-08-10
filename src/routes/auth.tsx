@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { claimAdmin } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -46,7 +47,7 @@ function AuthPage() {
       setMessage(error.message);
       return;
     }
-    await supabase.rpc("claim_admin");
+    await claimAdmin().catch(() => undefined);
     navigate({ to: "/admin" });
   }
 

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Trash2, Plus, LogOut, ArrowLeft, ImagePlus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Category, Product } from "@/data/catalog";
+import { claimAdmin } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -55,7 +56,7 @@ function Admin() {
 
   useEffect(() => {
     (async () => {
-      await supabase.rpc("claim_admin");
+      await claimAdmin().catch(() => undefined);
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;
       const { data: allowed } = await supabase.rpc("has_role", { _user_id: user.user.id, _role: "admin" });

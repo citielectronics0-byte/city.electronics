@@ -19,7 +19,9 @@ export const getCatalog = createServerFn({ method: "GET" }).handler(
     const paths = rows.map((p) => p.image_url).filter((v): v is string => Boolean(v));
     const signed = new Map<string, string>();
     if (paths.length) {
-      const { data } = await supabase.storage
+      // Storage objects are private; sign them server-side with the service role.
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data } = await supabaseAdmin.storage
         .from("product-images")
         .createSignedUrls(paths, 60 * 60 * 24);
       for (const item of data ?? []) {
