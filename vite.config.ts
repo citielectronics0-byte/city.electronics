@@ -7,9 +7,16 @@
 // @lovable.dev/vite-tanstack-config already includes the required plugins.
 // Do not add the plugins manually.
 
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
-
 export default defineConfig({
+  tanstackStart: {
+    spa: {
+      prerender: {
+        enabled: true,
+        outputPath: "/_shell.html",
+      },
+    },
+  },
+
   vite: {
     base: "/city.electronics/",
   },
