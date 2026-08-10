@@ -6,6 +6,10 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 // @lovable.dev/vite-tanstack-config already includes the required plugins.
 // Do not add the plugins manually.
+// @lovable.dev/vite-tanstack-config already includes the required plugins.
+// Do not add the plugins manually.
+
+import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
   tanstackStart: {
