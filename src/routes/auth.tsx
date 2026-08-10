@@ -46,7 +46,7 @@ function AuthPage() {
       setMessage(error.message);
       return;
     }
-    await supabase.rpc("claim_admin");
+    await claimAdmin().catch(() => undefined);
     navigate({ to: "/admin" });
   }
 
