@@ -15,8 +15,4 @@ export default defineConfig({
       crawlLinks: true,
     },
   },
-
-  vite: {
-    base: "/city.electronics/",
-  },
 });
