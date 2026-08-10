@@ -12,15 +12,6 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
-  tanstackStart: {
-    spa: {
-      prerender: {
-        enabled: true,
-        outputPath: "/_shell.html",
-      },
-    },
-  },
-
   vite: {
     base: "/city.electronics/",
   },
