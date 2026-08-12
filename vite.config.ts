@@ -13,11 +13,10 @@ const basePath = process.env["BASE_PATH"] || "/";
 export default isPages
   ? defineConfig({
       tanstackStart: {
-        server: { entry: "server" },
         // No server runtime on GitHub Pages — ship a client-rendered single page app.
         spa: { enabled: true },
       },
-      nitro: { preset: "static" },
+      nitro: false,
       vite: { base: basePath },
     })
 
