@@ -13,12 +13,14 @@ const basePath = process.env["BASE_PATH"] || "/";
 export default isPages
   ? defineConfig({
       tanstackStart: {
+        server: { entry: "server" },
         // No server runtime on GitHub Pages — ship a client-rendered single page app.
         spa: { enabled: true },
       },
       nitro: { preset: "static" },
       vite: { base: basePath },
     })
+
   : defineConfig({
       tanstackStart: {
         // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
