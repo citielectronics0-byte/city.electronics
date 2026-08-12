@@ -22,3 +22,25 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Deploying to GitHub Pages
+
+The storefront loads its catalogue directly from the database in the browser, so it
+runs as a static site with no server.
+
+1. Push this project to a GitHub repository (e.g. `city-electronics`).
+2. Repository → Settings → Pages → Source: **GitHub Actions**.
+3. Repository → Settings → Secrets and variables → Actions → add:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_PUBLISHABLE_KEY`
+   - `VITE_SUPABASE_PROJECT_ID`
+   (values are in the project `.env`)
+4. Push to `main`. The workflow `.github/workflows/deploy-pages.yml` builds and deploys.
+
+Site URL: `https://<username>.github.io/city-electronics/`
+
+Using a custom domain (or a `<username>.github.io` repo)? Change `BASE_PATH: /city-electronics/`
+to `BASE_PATH: /` in the workflow.
+
+Local static build: `GITHUB_PAGES=1 BASE_PATH=/city-electronics/ bun run build:pages`
+(output in `dist/client`).
