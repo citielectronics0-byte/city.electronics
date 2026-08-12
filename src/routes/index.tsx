@@ -44,11 +44,11 @@ const categoryIcons: Record<string, typeof Cable> = {
 };
 
 function Index() {
-  const { categories, products } = Route.useLoaderData() as {
-    categories: Category[];
-    products: Product[];
-  };
+  const { data } = useQuery(catalogQueryOptions);
+  const categories: Category[] = data?.categories ?? [];
+  const products: Product[] = data?.products ?? [];
   const [active, setActive] = useState<string>("all");
+
   const [cart, setCart] = useState<Record<string, number>>({});
   const [zoneId, setZoneId] = useState<string>(deliveryZones[0]!.id);
   const zone = deliveryZones.find((z) => z.id === zoneId)!;
