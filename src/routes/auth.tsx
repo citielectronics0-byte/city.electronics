@@ -19,7 +19,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -29,6 +29,21 @@ function AuthPage() {
     e.preventDefault();
     setBusy(true);
     setMessage(null);
+    if (mode === "forgot") {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setBusy(false);
+        setMessage("Please enter a valid email address.");
+        return;
+      }
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}reset-password`,
+      });
+      setBusy(false);
+      setMessage(
+        error ? error.message : "If that email has an account, a reset link is on its way. Check your inbox.",
+      );
+      return;
+    }
     if (mode === "signup") {
       const { error } = await supabase.auth.signUp({
         email,
@@ -53,9 +68,13 @@ function AuthPage() {
   return (
     <div className="grid min-h-screen place-items-center bg-secondary/50 px-5 py-16">
       <div className="card-classic w-full max-w-md p-8">
-        <h1 className="rule-gold font-display text-3xl">Shop login</h1>
+        <h1 className="rule-gold font-display text-3xl">
+          {mode === "forgot" ? "Forgot password" : "Shop login"}
+        </h1>
         <p className="mt-6 text-sm text-muted-foreground">
-          Sign in to manage products, prices and stock.
+          {mode === "forgot"
+            ? "Enter your shop email and we'll send you a link to set a new password."
+            : "Sign in to manage products, prices and stock."}
         </p>
         <form onSubmit={submit} className="mt-6 space-y-4">
           <div>
@@ -69,32 +88,56 @@ function AuthPage() {
               className="mt-1 w-full border border-border bg-card px-3 py-2 text-sm"
             />
           </div>
-          <div>
-            <label htmlFor="password" className="text-xs uppercase tracking-widest text-muted-foreground">Password</label>
-            <input
-              id="password"
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full border border-border bg-card px-3 py-2 text-sm"
-            />
-          </div>
+          {mode !== "forgot" && (
+            <div>
+              <label htmlFor="password" className="text-xs uppercase tracking-widest text-muted-foreground">Password</label>
+              <input
+                id="password"
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1 w-full border border-border bg-card px-3 py-2 text-sm"
+              />
+              {mode === "signin" && (
+                <button
+                  type="button"
+                  onClick={() => { setMode("forgot"); setMessage(null); }}
+                  className="mt-2 text-xs uppercase tracking-widest text-accent-foreground underline decoration-accent underline-offset-4"
+                >
+                  Forgot password?
+                </button>
+              )}
+            </div>
+          )}
           {message && <p className="text-sm text-muted-foreground">{message}</p>}
           <button
             type="submit"
             disabled={busy}
             className="w-full bg-primary px-5 py-3 text-sm font-semibold uppercase tracking-widest text-primary-foreground disabled:opacity-60"
           >
-            {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
+            {busy
+              ? "Please wait…"
+              : mode === "signin"
+                ? "Sign in"
+                : mode === "signup"
+                  ? "Create account"
+                  : "Send reset link"}
           </button>
         </form>
         <button
-          onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setMessage(null); }}
+          onClick={() => {
+            setMode(mode === "signin" ? "signup" : "signin");
+            setMessage(null);
+          }}
           className="mt-5 text-xs uppercase tracking-widest text-accent-foreground underline decoration-accent underline-offset-4"
         >
-          {mode === "signin" ? "First time? Create the shop account" : "Already have an account? Sign in"}
+          {mode === "signin"
+            ? "First time? Create the shop account"
+            : mode === "signup"
+              ? "Already have an account? Sign in"
+              : "Back to login"}
         </button>
       </div>
     </div>
