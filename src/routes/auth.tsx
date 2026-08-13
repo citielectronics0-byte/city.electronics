@@ -68,9 +68,13 @@ function AuthPage() {
   return (
     <div className="grid min-h-screen place-items-center bg-secondary/50 px-5 py-16">
       <div className="card-classic w-full max-w-md p-8">
-        <h1 className="rule-gold font-display text-3xl">Shop login</h1>
+        <h1 className="rule-gold font-display text-3xl">
+          {mode === "forgot" ? "Forgot password" : "Shop login"}
+        </h1>
         <p className="mt-6 text-sm text-muted-foreground">
-          Sign in to manage products, prices and stock.
+          {mode === "forgot"
+            ? "Enter your shop email and we'll send you a link to set a new password."
+            : "Sign in to manage products, prices and stock."}
         </p>
         <form onSubmit={submit} className="mt-6 space-y-4">
           <div>
