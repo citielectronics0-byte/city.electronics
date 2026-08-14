@@ -296,6 +296,25 @@ function Index() {
               </article>
             ))}
           </div>
+
+          {visible.length === 0 && (
+            <div className="card-classic mt-10 p-12 text-center">
+              <Search className="mx-auto size-7 text-muted-foreground" />
+              <p className="mt-4 font-display text-2xl">No products found</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Try searching for another product, category, or keyword.
+              </p>
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  className="mt-6 border border-border px-5 py-2 text-xs uppercase tracking-widest hover:border-accent"
+                >
+                  Clear search
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
