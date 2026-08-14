@@ -1,8 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): { mode?: "forgot" } =>
+    search["mode"] === "forgot" ? { mode: "forgot" } : {},
   head: () => ({
     meta: [
       { title: "Shop Login — City Electronics" },
@@ -24,6 +26,14 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Allows /auth?mode=forgot deep links (e.g. from an expired reset link).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const m = new URLSearchParams(window.location.search).get("mode");
+    if (m === "forgot") setMode("forgot");
+  }, []);
+
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

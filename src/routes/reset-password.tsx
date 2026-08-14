@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/reset-password")({
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/reset-password")({
 });
 
 function passwordProblem(pw: string): string | null {
+  if (!pw.trim()) return "Please enter a new password.";
   if (pw.length < 8) return "Password must be at least 8 characters.";
   if (!/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)) return "Password must include at least one letter and one number.";
   return null;
@@ -28,16 +30,16 @@ function ResetPasswordPage() {
   const [status, setStatus] = useState<"checking" | "ready" | "invalid" | "done">("checking");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [resendEmail, setResendEmail] = useState("");
-  const [resendMsg, setResendMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    const sub = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
+    const sub = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") && session) {
         if (!cancelled) setStatus("ready");
       }
     });
@@ -50,20 +52,44 @@ function ResetPasswordPage() {
         if (!cancelled) setStatus("invalid");
         return;
       }
+
+      // Newer email templates send ?token_hash=...&type=recovery
+      const tokenHash = url.searchParams.get("token_hash") ?? hash.get("token_hash");
+      const type = url.searchParams.get("type") ?? hash.get("type");
+      if (tokenHash && type === "recovery") {
+        const { error } = await supabase.auth.verifyOtp({ type: "recovery", token_hash: tokenHash });
+        if (!cancelled) setStatus(error ? "invalid" : "ready");
+        return;
+      }
+
+      // PKCE flow
       const code = url.searchParams.get("code");
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         if (!cancelled) setStatus(error ? "invalid" : "ready");
         return;
       }
+
+      // Implicit flow: tokens in the URL hash
+      const accessToken = hash.get("access_token");
+      const refreshToken = hash.get("refresh_token");
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (!cancelled) setStatus(error ? "invalid" : "ready");
+        return;
+      }
+
       const { data } = await supabase.auth.getSession();
       if (!cancelled && data.session) setStatus("ready");
       else if (!cancelled) {
-        // Give the client a moment to parse recovery tokens from the URL hash.
+        // Give the client a moment to parse recovery tokens from the URL.
         setTimeout(async () => {
           const again = await supabase.auth.getSession();
           if (!cancelled) setStatus(again.data.session ? "ready" : "invalid");
-        }, 1200);
+        }, 1500);
       }
     })();
 
@@ -78,26 +104,20 @@ function ResetPasswordPage() {
     setMessage(null);
     const problem = passwordProblem(password);
     if (problem) return setMessage(problem);
+    if (!confirm.trim()) return setMessage("Please confirm your new password.");
     if (password !== confirm) return setMessage("Passwords do not match.");
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
     if (error) return setMessage(error.message);
+    setPassword("");
+    setConfirm("");
     setStatus("done");
   }
 
-  async function resend(e: React.FormEvent) {
-    e.preventDefault();
-    setResendMsg(null);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resendEmail)) {
-      setResendMsg("Please enter a valid email address.");
-      return;
-    }
-    const { error } = await supabase.auth.resetPasswordForEmail(resendEmail, {
-      redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}reset-password`,
-    });
-    setResendMsg(error ? error.message : "If that email has an account, a new reset link is on its way.");
-  }
+  const fieldClass = "mt-1 w-full border border-border bg-card px-3 py-2 pr-11 text-sm";
+  const toggleClass =
+    "absolute inset-y-0 right-0 mt-1 flex items-center px-3 text-muted-foreground hover:text-foreground";
 
   return (
     <div className="grid min-h-screen place-items-center bg-secondary/50 px-5 py-16">
@@ -111,28 +131,15 @@ function ResetPasswordPage() {
         {status === "invalid" && (
           <>
             <p className="mt-6 text-sm text-muted-foreground">
-              This reset link is invalid or has expired. Request a new one below.
+              This password reset link is invalid or has expired. Please request a new reset link.
             </p>
-            <form onSubmit={resend} className="mt-6 space-y-4">
-              <div>
-                <label htmlFor="resend-email" className="text-xs uppercase tracking-widest text-muted-foreground">Email</label>
-                <input
-                  id="resend-email"
-                  type="email"
-                  required
-                  value={resendEmail}
-                  onChange={(e) => setResendEmail(e.target.value)}
-                  className="mt-1 w-full border border-border bg-card px-3 py-2 text-sm"
-                />
-              </div>
-              {resendMsg && <p className="text-sm text-muted-foreground">{resendMsg}</p>}
-              <button
-                type="submit"
-                className="w-full bg-primary px-5 py-3 text-sm font-semibold uppercase tracking-widest text-primary-foreground"
-              >
-                Send reset link
-              </button>
-            </form>
+            <Link
+              to="/auth"
+              search={{ mode: "forgot" }}
+              className="mt-6 inline-block w-full bg-primary px-5 py-3 text-center text-sm font-semibold uppercase tracking-widest text-primary-foreground"
+            >
+              Request new reset link
+            </Link>
           </>
         )}
 
@@ -140,32 +147,46 @@ function ResetPasswordPage() {
           <>
             <p className="mt-6 text-sm text-muted-foreground">Choose a new password for your shop account.</p>
             <form onSubmit={submit} className="mt-6 space-y-4">
-              <div>
+              <div className="relative">
                 <label htmlFor="new-password" className="text-xs uppercase tracking-widest text-muted-foreground">New password</label>
                 <input
                   id="new-password"
-                  type="password"
-                  required
+                  type={showPw ? "text" : "password"}
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 w-full border border-border bg-card px-3 py-2 text-sm"
+                  className={fieldClass}
                 />
+                <button
+                  type="button"
+                  aria-label={showPw ? "Hide password" : "Show password"}
+                  onClick={() => setShowPw((v) => !v)}
+                  className={toggleClass}
+                >
+                  {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
               </div>
-              <div>
+              <div className="relative">
                 <label htmlFor="confirm-password" className="text-xs uppercase tracking-widest text-muted-foreground">Confirm new password</label>
                 <input
                   id="confirm-password"
-                  type="password"
-                  required
+                  type={showConfirm ? "text" : "password"}
                   autoComplete="new-password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
-                  className="mt-1 w-full border border-border bg-card px-3 py-2 text-sm"
+                  className={fieldClass}
                 />
+                <button
+                  type="button"
+                  aria-label={showConfirm ? "Hide password" : "Show password"}
+                  onClick={() => setShowConfirm((v) => !v)}
+                  className={toggleClass}
+                >
+                  {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
               </div>
               <p className="text-xs text-muted-foreground">At least 8 characters, including a letter and a number.</p>
-              {message && <p className="text-sm text-muted-foreground">{message}</p>}
+              {message && <p className="text-sm text-destructive">{message}</p>}
               <button
                 type="submit"
                 disabled={busy}
@@ -180,7 +201,7 @@ function ResetPasswordPage() {
         {status === "done" && (
           <>
             <p className="mt-6 text-sm text-muted-foreground">
-              Your password has been updated. You can now sign in with your new password.
+              Password updated successfully. You can now sign in with your new password.
             </p>
             <Link
               to="/auth"

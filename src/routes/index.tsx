@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Cable, Plug, Tv, CircuitBoard, Laptop, Smartphone, MessageCircle, MapPin, Clock, Phone, Minus, Plus, Lock, Truck, ImageOff } from "lucide-react";
+import { Cable, Plug, Tv, CircuitBoard, Laptop, Smartphone, MessageCircle, MapPin, Clock, Phone, Minus, Plus, Lock, Truck, ImageOff, Search, X } from "lucide-react";
 import heroImage from "@/assets/hero-electronics.jpg";
 import { whatsappLink, WHATSAPP_NUMBER, deliveryZones, SHOP_LOCATION, type Category, type Product } from "@/data/catalog";
 import { catalogQueryOptions } from "@/lib/catalog-client";
@@ -48,15 +48,24 @@ function Index() {
   const categories: Category[] = data?.categories ?? [];
   const products: Product[] = data?.products ?? [];
   const [active, setActive] = useState<string>("all");
+  const [query, setQuery] = useState("");
 
   const [cart, setCart] = useState<Record<string, number>>({});
   const [zoneId, setZoneId] = useState<string>(deliveryZones[0]!.id);
   const zone = deliveryZones.find((z) => z.id === zoneId)!;
 
-  const visible = useMemo(
-    () => (active === "all" ? products : products.filter((p) => p.category_id === active)),
-    [active, products],
-  );
+  const visible = useMemo(() => {
+    const byCategory = active === "all" ? products : products.filter((p) => p.category_id === active);
+    const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (!terms.length) return byCategory;
+    const categoryName = new Map(categories.map((c) => [c.id, c.name.toLowerCase()]));
+    return byCategory.filter((p) => {
+      const haystack = [p.name, p.note ?? "", categoryName.get(p.category_id) ?? ""]
+        .join(" ")
+        .toLowerCase();
+      return terms.every((t) => haystack.includes(t));
+    });
+  }, [active, products, categories, query]);
 
   const lines = Object.entries(cart).filter(([, qty]) => qty > 0);
   const total = lines.reduce((sum, [id, qty]) => {
@@ -124,6 +133,32 @@ function Index() {
               <MessageCircle className="size-4" /> Order on WhatsApp
             </a>
           </div>
+          <div className="relative mt-6 w-full max-w-xl">
+            <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              aria-label="Search products"
+              placeholder="Search products, cables, connectors, remotes..."
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                if (e.target.value.trim()) {
+                  document.getElementById("catalogue")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+              }}
+              className="w-full border border-border bg-card py-3 pl-11 pr-11 text-sm text-foreground outline-none focus:border-accent"
+            />
+            {query && (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => setQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-4" />
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
@@ -156,7 +191,29 @@ function Index() {
         <div className="mx-auto max-w-6xl px-5 py-16">
           <h2 className="rule-gold font-display text-3xl">Catalogue</h2>
 
-          <div className="mt-8 flex flex-wrap gap-2">
+          <div className="relative mt-8 w-full max-w-xl">
+            <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              aria-label="Search the catalogue"
+              placeholder="Search products, cables, connectors, remotes..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full border border-border bg-card py-3 pl-11 pr-11 text-sm text-foreground outline-none focus:border-accent"
+            />
+            {query && (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => setQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-4" />
+              </button>
+            )}
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-2">
             {[{ id: "all", name: "All items" }, ...categories].map((c) => (
               <button
                 key={c.id}
@@ -239,6 +296,25 @@ function Index() {
               </article>
             ))}
           </div>
+
+          {visible.length === 0 && (
+            <div className="card-classic mt-10 p-12 text-center">
+              <Search className="mx-auto size-7 text-muted-foreground" />
+              <p className="mt-4 font-display text-2xl">No products found</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Try searching for another product, category, or keyword.
+              </p>
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  className="mt-6 border border-border px-5 py-2 text-xs uppercase tracking-widest hover:border-accent"
+                >
+                  Clear search
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
