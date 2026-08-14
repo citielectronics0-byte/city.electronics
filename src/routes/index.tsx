@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Cable, Plug, Tv, CircuitBoard, Laptop, Smartphone, MessageCircle, MapPin, Clock, Phone, Minus, Plus, Lock, Truck, ImageOff } from "lucide-react";
+import { Cable, Plug, Tv, CircuitBoard, Laptop, Smartphone, MessageCircle, MapPin, Clock, Phone, Minus, Plus, Lock, Truck, ImageOff, Search, X } from "lucide-react";
 import heroImage from "@/assets/hero-electronics.jpg";
 import { whatsappLink, WHATSAPP_NUMBER, deliveryZones, SHOP_LOCATION, type Category, type Product } from "@/data/catalog";
 import { catalogQueryOptions } from "@/lib/catalog-client";

@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): { mode?: "forgot" } =>
+    search["mode"] === "forgot" ? { mode: "forgot" } : {},
   head: () => ({
     meta: [
       { title: "Shop Login — City Electronics" },
