@@ -48,15 +48,24 @@ function Index() {
   const categories: Category[] = data?.categories ?? [];
   const products: Product[] = data?.products ?? [];
   const [active, setActive] = useState<string>("all");
+  const [query, setQuery] = useState("");
 
   const [cart, setCart] = useState<Record<string, number>>({});
   const [zoneId, setZoneId] = useState<string>(deliveryZones[0]!.id);
   const zone = deliveryZones.find((z) => z.id === zoneId)!;
 
-  const visible = useMemo(
-    () => (active === "all" ? products : products.filter((p) => p.category_id === active)),
-    [active, products],
-  );
+  const visible = useMemo(() => {
+    const byCategory = active === "all" ? products : products.filter((p) => p.category_id === active);
+    const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (!terms.length) return byCategory;
+    const categoryName = new Map(categories.map((c) => [c.id, c.name.toLowerCase()]));
+    return byCategory.filter((p) => {
+      const haystack = [p.name, p.note ?? "", categoryName.get(p.category_id) ?? ""]
+        .join(" ")
+        .toLowerCase();
+      return terms.every((t) => haystack.includes(t));
+    });
+  }, [active, products, categories, query]);
 
   const lines = Object.entries(cart).filter(([, qty]) => qty > 0);
   const total = lines.reduce((sum, [id, qty]) => {
